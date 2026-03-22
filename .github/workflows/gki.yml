@@ -1,16 +1,40 @@
-name: Sync GKI Source
+name: Sync GKI via repo (shallow)
 on: [workflow_dispatch]
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
-      - name: Clone via proxy-free environment
+
+      - name: Install repo tool
         run: |
-          git clone --depth=1 -b common-android-mainline-riscv64 \
-            https://android.googlesource.com/kernel/common .
-          tar -czf source.tar.gz .
-      - uses: actions/upload-artifact@v4
+          curl -Lo repo https://storage.googleapis.com/git-repo-downloads/repo
+          chmod a+x repo
+          sudo mv repo /usr/local/bin/
+
+      - name: Configure git for shallow clone
+        run: |
+          git config --global fetch.depth 1
+          git config --global remote.origin.partialclonefilter blob:none
+
+      - name: Repo init and sync (shallow)
+        run: |
+          mkdir gki-workspace && cd gki-workspace
+          repo init --partial-clone --clone-filter=blob:none \
+            -u https://android.googlesource.com/kernel/manifest \
+            -b common-android-mainline-riscv64
+          repo sync -j$(nproc) --no-clone-bundle
+
+      - name: Create archive
+        run: |
+          tar -czf gki-shallow.tar.gz gki-workspace
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: gki-source
-          path: source.tar.gz
+          name: gki-full-source
+          path: gki-shallow.tar.gz
+          retention-days: 1
+
