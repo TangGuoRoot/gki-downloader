@@ -1,0 +1,16 @@
+name: Sync GKI Source
+on: [workflow_dispatch]
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone via proxy-free environment
+        run: |
+          git clone --depth=1 -b common-android-mainline-riscv64 \
+            https://android.googlesource.com/kernel/common .
+          tar -czf source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gki-source
+          path: source.tar.gz
