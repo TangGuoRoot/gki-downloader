@@ -25,7 +25,7 @@ jobs:
           repo init --partial-clone --clone-filter=blob:none \
             -u https://android.googlesource.com/kernel/manifest \
             -b common-android-mainline-riscv64
-          repo sync -j$(nproc) --no-clone-bundle
+          repo sync -c --no-clone-bundle
 
       - name: Create archive
         run: |
